@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 
 
-#virtualenvironment
-*.venv
-.env
+# Python virtual environment inside backend
+backend/venv/
+
+# Node modules (assuming at root or frontend folder)
+node_modules/
