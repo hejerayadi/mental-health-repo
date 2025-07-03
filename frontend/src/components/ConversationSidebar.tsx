@@ -43,7 +43,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   const formatDate = (date: Date) => {
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 24) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffInHours < 24 * 7) {
@@ -54,7 +54,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   };
 
   return (
-    <Sidebar className={`${isCollapsed ? 'w-14' : 'w-80'} transition-all duration-300`}>
+    <Sidebar className={`${isCollapsed ? 'w-14' : 'w-64'} transition-all duration-300`}>
       <SidebarContent className="bg-sidebar-background border-r border-sidebar-border">
         {/* Header */}
         <div className="p-4 border-b border-sidebar-border">
@@ -70,56 +70,55 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         {/* Conversations List */}
         <ScrollArea className="flex-1">
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground px-5 py-4 font-bold text-lg mb-2">
+            <SidebarGroupLabel className="text-sidebar-foreground px-3 py-2 font-medium">
               {!isCollapsed && 'Recent Conversations'}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {conversations.length === 0 ? (
-                  <div className="px-5 py-10 mb-6 rounded-lg bg-sidebar-accent/10">
+                  <div className="px-3 py-6">
                     {!isCollapsed && (
-                      <div className="text-center text-sidebar-foreground/80">
-                        <MessageSquare size={40} className="mx-auto mb-3 opacity-60" />
-                        <p className="text-base font-semibold">No conversations yet</p>
-                        <p className="text-sm mt-2">Start a new sports chat!</p>
+                      <div className="text-center text-sidebar-foreground/60">
+                        <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No conversations yet</p>
+                        <p className="text-xs mt-1">Start a new sports chat!</p>
                       </div>
                     )}
                   </div>
                 ) : (
                   conversations.map((conversation) => (
-                    <SidebarMenuItem key={conversation.id} className="mb-6 last:mb-0">
+                    <SidebarMenuItem key={conversation.id}>
                       <SidebarMenuButton
                         onClick={() => onSelectConversation(conversation.id)}
-                        className={`group relative w-full px-10 py-7 rounded-lg transition-all duration-200 min-h-[80px] ${
+                        className={`group relative w-52 rounded-lg transition-all duration-200 h-20 ${
                           activeConversationId === conversation.id
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-md border-2 border-violet-600'
-                            : 'hover:bg-sidebar-accent/50 text-sidebar-foreground hover:shadow-sm border border-transparent'
-                        }`}
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-lg border-2 border-purple-500'
+                            : 'hover:bg-sidebar-accent/50 text-sidebar-foreground hover:shadow-md hover:border-2 hover:border-purple-300'
+                        } border-2 border-transparent`}
                       >
-                        <div className="flex items-start gap-3 w-full min-w-0">
-                          <MessageSquare size={18} className="flex-shrink-0 mt-1" />
+                        <div className="flex items-start gap-3 w-full min-w-0 h-full py-2 px-3">
+                          <MessageSquare size={16} className="flex-shrink-0 mt-1" />
                           {!isCollapsed && (
-                            <div className="flex-1 min-w-0 ml-2">
-                              <div className="flex items-center justify-between">
-                                <h3 className="font-semibold text-sm truncate">
+                            <div className="flex-1 min-w-0 h-full flex flex-col justify-between pr-8">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="font-medium text-xs truncate max-w-[100px]">
                                   {conversation.title}
                                 </h3>
-                                <span className="text-xs text-sidebar-foreground/60 ml-2 font-medium">
+                                <span className="text-xs text-sidebar-foreground/60 ml-2 font-normal flex-shrink-0">
                                   {formatDate(conversation.timestamp)}
                                 </span>
                               </div>
-                              <p className="text-xs text-sidebar-foreground/70 truncate mt-1 leading-relaxed">
+                              <p className="text-xs text-sidebar-foreground/70 truncate leading-relaxed mb-1">
                                 {conversation.lastMessage}
                               </p>
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-xs text-sidebar-foreground/50 font-medium">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-sidebar-foreground/50 font-normal">
                                   {conversation.messageCount} messages
                                 </span>
                               </div>
                             </div>
                           )}
                         </div>
-                        
                         {!isCollapsed && (
                           <Button
                             variant="ghost"
@@ -128,9 +127,9 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                               e.stopPropagation();
                               onDeleteConversation(conversation.id);
                             }}
-                            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 hover:bg-destructive/20 hover:text-destructive border border-transparent hover:border-destructive/30"
+                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-destructive/20 hover:text-destructive border border-transparent hover:border-destructive/30"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={12} />
                           </Button>
                         )}
                       </SidebarMenuButton>
@@ -144,13 +143,13 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
 
         {/* Footer */}
         {!isCollapsed && (
-          <div className="border-t border-sidebar-border p-4 px-8 sticky bottom-0 bg-sidebar-background z-10">
+          <div className="border-t border-sidebar-border p-4">
             <div className="text-center">
               <h3 className="text-sm font-semibold text-sidebar-foreground mb-1">
                 🏆 Sports Talk AI
               </h3>
               <p className="text-xs text-sidebar-foreground/70 leading-relaxed">
-                Your ultimate sports discussion companionssssss
+                Your ultimate sports discussion companion
               </p>
             </div>
           </div>
