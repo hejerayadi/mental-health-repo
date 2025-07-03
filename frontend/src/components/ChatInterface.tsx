@@ -15,9 +15,11 @@ interface Message {
 interface ChatInterfaceProps {
   conversationId: string;
   onUpdateConversation: (id: string, title: string, messages: Message[]) => void;
+  sidebarOpen: boolean;
+  sidebarWidth: number;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversationId, onUpdateConversation }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversationId, onUpdateConversation, sidebarOpen, sidebarWidth }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -91,69 +93,87 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversationId, onUpdateC
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Chat Header */}
-      <div className="border-b border-border bg-card/80 px-6 py-2">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">+++ Sports Talk AI</h3>
-          <p className="text-xs text-muted-foreground">+++++ Your intelligent sports discussion companion</p>
+      {/* Fixed Chat Header */}
+      <div
+        className="fixed top-14 z-10 border-b border-border bg-card/50 backdrop-blur-sm px-6 py-4 transition-all duration-500"
+        style={{
+          left: sidebarOpen ? sidebarWidth : 0,
+          right: 0,
+          transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1)',
+          willChange: 'left',
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Sports Talk AI</h2>
+            <p className="text-sm text-muted-foreground">Your intelligent sports discussion companion</p>
+          </div>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 px-4">
-        <div className="max-w-4xl mx-auto py-6">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-4 mb-6 ${message.sender === 'user' ? 'justify-end' : ''}`}
-            >
-              {message.sender === 'bot' && (
+      {/* Messages Area with top padding to account for fixed header */}
+      <div className="flex-1 pt-20 pb-20">
+        <ScrollArea className="h-full px-4">
+          <div className="max-w-4xl mx-auto py-6">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-4 mb-6 ${message.sender === 'user' ? 'justify-end' : ''}`}
+              >
+                {message.sender === 'bot' && (
+                  <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    <Bot size={16} className="text-primary-foreground" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-[70%] ${
+                    message.sender === 'user'
+                      ? 'bg-primary text-primary-foreground ml-auto'
+                      : 'bg-card text-card-foreground'
+                  } rounded-2xl px-4 py-3 shadow-sm`}
+                >
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                {message.sender === 'user' && (
+                  <div className="flex-shrink-0 w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                    <User size={16} className="text-secondary-foreground" />
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex gap-4 mb-6">
                 <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                   <Bot size={16} className="text-primary-foreground" />
                 </div>
-              )}
-              
-              <div
-                className={`max-w-[70%] ${
-                  message.sender === 'user'
-                    ? 'bg-primary text-primary-foreground ml-auto'
-                    : 'bg-card text-card-foreground'
-                } rounded-2xl px-4 py-3 shadow-sm`}
-              >
-                <p className="text-sm leading-relaxed">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-
-              {message.sender === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
-                  <User size={16} className="text-secondary-foreground" />
-                </div>
-              )}
-            </div>
-          ))}
-
-          {isLoading && (
-            <div className="flex gap-4 mb-6">
-              <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <Bot size={16} className="text-primary-foreground" />
-              </div>
-              <div className="bg-card rounded-2xl px-4 py-3">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="bg-card rounded-2xl px-4 py-3">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </div>
 
-      {/* Input Area */}
-      <div className="border-t border-border bg-card/30 p-4">
+      {/* Fixed Input Area */}
+      <div
+        className="fixed bottom-0 z-10 border-t border-border bg-card/50 backdrop-blur-sm p-4 transition-all duration-500"
+        style={{
+          left: sidebarOpen ? sidebarWidth : 0,
+          right: 0,
+          transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1)',
+          willChange: 'left',
+        }}
+      >
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-2 items-end">
             <div className="flex-1">

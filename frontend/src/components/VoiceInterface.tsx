@@ -13,78 +13,69 @@ export interface VoiceInterfaceProps {
   onSendMessage?: (messageContent?: string) => void;
 }
 
-const LANGUAGES = [
-  { code: 'en-US', label: 'English' },
-  { code: 'fr-FR', label: 'Français' },
-  { code: 'ar-SA', label: 'العربية' },
-];
-
 const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onSendMessage }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [language, setLanguage] = useState('en-US');
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-  const getRecognition = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Speech Recognition API not supported in this browser.');
-      return null;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = language;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    return recognition;
-  };
-
-  const startRecognition = () => {
-    const recognition = getRecognition();
-    if (!recognition) return;
-    recognitionRef.current = recognition;
+  // Start recording audio
+  const startAudioRecording = async () => {
     setTranscript('');
     setIsRecording(true);
-
-    recognition.onresult = (event: any) => {
-      let interim = '';
-      let final = '';
-      for (let i = 0; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          final += event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-      setTranscript(final + interim);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    const chunks: Blob[] = [];
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
     };
-
-    recognition.onerror = (event: any) => {
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+      handleUploadAndTranscribe(audioBlob);
       setIsRecording(false);
-      alert('Speech recognition error: ' + event.error);
     };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-      if (transcript.trim() && onSendMessage) {
-        onSendMessage(transcript.trim());
-      }
-      setIsOpen(false);
-    };
-
-    recognition.start();
+    mediaRecorder.start();
   };
 
-  const stopRecognition = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-      // Send the transcript to chat and close the dialog
-      if (transcript.trim() && onSendMessage) {
-        onSendMessage(transcript.trim());
-      }
-      setIsOpen(false);
+  // Stop recording audio
+  const stopAudioRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
+
+  // Upload audio and get transcription from backend
+  const handleUploadAndTranscribe = async (audioBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+    const res = await fetch('http://localhost:5000/transcribe', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    // data.text: transcription, data.language: detected language, data.emotion: detected emotion
+
+    // Example: show all in chat
+    if (onSendMessage) {
+      onSendMessage(`${data.text} (Emotion: ${data.emotion || 'N/A'})`);
     }
+    setTranscript(data.text || '');
+    // Optionally, show emotion elsewhere in your UI
+    // setEmotion(data.emotion || '');
+    setIsOpen(false); // Close dialog after transcription
+  };
+
+  // Upload audio and detect emotion
+  const handleUploadAndDetectEmotion = async (audioBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.wav'); // Use .wav if possible
+    const res = await fetch('http://localhost:5000/predict', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    // Optionally show emotion in UI
+    alert('Detected emotion: ' + data.emotion);
   };
 
   return (
@@ -100,7 +91,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onSendMessage }) => {
         </DialogHeader>
         <div className="flex gap-2 mb-4">
           <Button
-            onClick={isRecording ? stopRecognition : startRecognition}
+            onClick={isRecording ? stopAudioRecording : startAudioRecording}
             className={isRecording ? 'bg-red-500 text-white' : ''}
           >
             {isRecording ? <Square /> : <Mic />}
@@ -108,31 +99,9 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onSendMessage }) => {
           </Button>
         </div>
         <div className="min-h-[80px] border rounded p-2 bg-background">
-          <span className="text-muted-foreground">{transcript || 'Speak and stop to see transcription...'}</span>
-        </div>
-        <div className="mt-4">
-          <label htmlFor="lang" className="block text-sm font-medium text-white">
-            Select Language:
-          </label>
-          <select
-            id="lang"
-            value={language}
-            onChange={e => setLanguage(e.target.value)}
-            className="border rounded px-2 py-1 bg-black text-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500 mt-2"
-          >
-            {LANGUAGES.map(lang => (
-              <option
-                key={lang.code}
-                value={lang.code}
-                style={{
-                  backgroundColor: language === lang.code ? '#8b5cf6' : '#000',
-                  color: '#fff'
-                }}
-              >
-                {lang.label}
-              </option>
-            ))}
-          </select>
+          <span className="text-muted-foreground">
+            {transcript || 'Speak and stop to see transcription...'}
+          </span>
         </div>
       </DialogContent>
     </Dialog>
