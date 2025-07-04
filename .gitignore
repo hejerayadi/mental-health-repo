@@ -26,6 +26,9 @@ dist-ssr
 
 # Python virtual environment inside backend
 backend/venv/
+venv/
+backend/venv/
+
 
 # Node modules (assuming at root or frontend folder)
 node_modules/
