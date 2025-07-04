@@ -43,45 +43,39 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversationId, onUpdateC
   const handleSendMessage = async (messageContent?: string) => {
     const content = messageContent || inputValue;
     if (!content.trim() || isLoading) return;
-
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
       sender: 'user',
       timestamp: new Date()
     };
-
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
-
-    // Simulate bot response with sports-themed replies
-    setTimeout(() => {
-      const botResponses = [
-        "That's an interesting point about sports! What specific aspect would you like to explore further?",
-        "Great question! In sports, there are always multiple perspectives to consider. Here's my take...",
-        "I love discussing sports strategy! That reminds me of a similar situation in recent games...",
-        "Sports analytics can be fascinating! Let me break down what the numbers might tell us...",
-        "That's a hot topic in the sports world right now! Here's what I think about the situation...",
-        "Classic sports debate! Both sides have valid arguments. Let me share some insights..."
-      ];
-
+    try {
+      const res = await fetch('http://localhost:5000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content })
+      });
+      const data = await res.json();
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: botResponses[Math.floor(Math.random() * botResponses.length)],
+        content: data.response || 'Sorry, something went wrong.',
         sender: 'bot',
         timestamp: new Date()
       };
-
       const updatedMessages = [...newMessages, botMessage];
       setMessages(updatedMessages);
-      setIsLoading(false);
-
       // Update conversation in sidebar
       const title = userMessage.content.slice(0, 50) + (userMessage.content.length > 50 ? '...' : '');
       onUpdateConversation(conversationId, title, updatedMessages);
-    }, 1000 + Math.random() * 2000);
+    } catch (error) {
+      // Handle error
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
