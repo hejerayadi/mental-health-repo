@@ -57,7 +57,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onSendMessage }) => {
 
     // Example: show all in chat
     if (onSendMessage) {
-      onSendMessage(`${data.text} (Emotion: ${data.emotion || 'N/A'})`);
+      onSendMessage(data.text || '');
     }
     setTranscript(data.text || '');
     // Optionally, show emotion elsewhere in your UI
